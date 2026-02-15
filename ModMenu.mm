@@ -120,8 +120,11 @@ bool WorldToScreen(Vec3 worldPos, Vector2 &screenPos, Matrix4x4 viewProj) {
     x *= invW;
     y *= invW;
 
-    float width = [UIScreen mainScreen].bounds.size.width;
-    float height = [UIScreen mainScreen].bounds.size.height;
+    CGRect screenBounds = [UIScreen mainScreen].bounds;
+    // En iOS modernos, preferiblemente usar el bounds de la escena si es posible, 
+    // pero para un dylib inyectado esto suele ser suficiente o ajustable.
+    float width = screenBounds.size.width;
+    float height = screenBounds.size.height;
 
     screenPos.x = (width / 2.0f) + (x * width / 2.0f);
     screenPos.y = (height / 2.0f) - (y * height / 2.0f);
@@ -143,6 +146,7 @@ void HackLoop() {
                 
                 if (cameraInfoPtr && p1) {
                     CameraInfo *info = (CameraInfo*)cameraInfoPtr;
+                    (void)info; // Marcar como usado para evitar warning
                     GameVector *objects = (GameVector*)(p1 + ptrObject2);
                     
                     int count = (objects->End - objects->Begin) / sizeof(uintptr_t);
@@ -152,12 +156,7 @@ void HackLoop() {
                             if (curObject) {
                                 uintptr_t curEntityPtr = *(uintptr_t*)(curObject - 0x10);
                                 if (curEntityPtr) {
-                                    // Entity *ent = (Entity*)curEntityPtr;
-                                    // Vec3 pos = ent->Origin;
-                                    // Vector2 screen;
-                                    // if (WorldToScreen(pos, screen, info->ViewProj)) {
-                                    //     // Render ESP here
-                                    // }
+                                    // ESP logic
                                 }
                             }
                         }
@@ -179,7 +178,20 @@ static UIButton *floatingBtn = nil;
 
 void SetupMenu() {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        menuWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        UIWindowScene *scene = nil;
+        for (UIScene *s in [UIApplication sharedApplication].connectedScenes) {
+            if ([s isKindOfClass:[UIWindowScene class]]) {
+                scene = (UIWindowScene *)s;
+                break;
+            }
+        }
+
+        if (scene) {
+            menuWindow = [[UIWindow alloc] initWithWindowScene:scene];
+        } else {
+            menuWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        }
+
         menuWindow.windowLevel = UIWindowLevelAlert + 1;
         menuWindow.backgroundColor = [UIColor clearColor];
         
@@ -199,7 +211,7 @@ void SetupMenu() {
         UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:menuCtrl action:@selector(handlePan:)];
         [floatingBtn addGestureRecognizer:pan];
         
-        [[UIApplication sharedApplication].keyWindow addSubview:floatingBtn];
+        [menuWindow addSubview:floatingBtn]; // Añadir a nuestra propia ventana de alerta
         
         // Iniciar el hilo del hack
         [NSThread detachNewThreadSelector:@selector(runHack) toTarget:[MenuController class] withObject:nil];

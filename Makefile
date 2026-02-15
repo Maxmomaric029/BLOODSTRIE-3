@@ -5,7 +5,7 @@ CC = $(shell xcrun --sdk iphoneos --find clang)
 CXX = $(shell xcrun --sdk iphoneos --find clang++)
 
 CFLAGS = -isysroot $(SYSROOT) -arch $(ARCHS) -fobjc-arc -O2 -Wall
-LDFLAGS = -dynamiclib -undefined dynamic_lookup -framework Foundation -framework UIKit
+LDFLAGS = -dynamiclib -undefined dynamic_lookup -framework Foundation -framework UIKit -lc++
 
 SOURCES = ModMenu.mm Math.cpp
 OBJECTS = $(SOURCES:.mm=.o)
