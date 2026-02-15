@@ -1,0 +1,1287 @@
+
+UnknownCheats - Leading the game hacking and cheat development scene since 2000	
+UnKnoWnCheaTs Game Hacking Portal	UnKnoWnCheaTs Game Hacking Forum – Cheats, Hacks, and Tutorials	Download Game Hacks, Cheats and Hacking Tools – UnKnoWnCheaTs	Donate to Support UnKnoWnCheaTs Game Hacking Community	User Settings and Preferences – UnKnoWnCheaTs Control Panel	Quick Access to Game Hacking Forums and Tools	Search UnKnoWnCheaTs	Join the UnKnoWnCheaTs Discord and IRC for Game Hacking Chat	Game Hacking Wiki – Tutorials and Guides on UnKnoWnCheaTs	Toggle Dark Mode
+
+Go Back	 	UnKnoWnCheaTs - Multiplayer Game Hacking and Cheats
+First-Person Shooters
+Other FPS Games
+Reload this Page [Information] LostLight Reversal, Structs and Offsets
+advertisements
+Advanced Forum Search
+New Posts | New Threads
+New Posts: Last Login
+Mark All Forums Read
+Total Posts: 0
+Threads Started: 0
+Reputation: 10
+Last Login: Today at 11:03 AM
+Your Notifications: 1 
+UnKnoWnCheaTs Community Rules
+
+Reply    	
+Page 1 of 4	1	2	3	4	>	
+ 
+Thread Tools 	Search this Thread 
+LostLight Reversal, Structs and Offsets
+Old 30th November 2021, 05:48 PM	  #1
+Finz Rus
+A God
+
+
+Finz Rus's Avatar
+
+Join Date: Mar 2017
+Posts: 198
+Reputation: 11003
+Rep Power: 230
+Finz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server space
+Points: 23,687, Level: 21
+Points: 23,687, Level: 21	Points: 23,687, Level: 21	Points: 23,687, Level: 21
+Level up: 81%, 313 Points needed
+Level up: 81%	Level up: 81%	Level up: 81%
+Activity: 2.8%
+Activity: 2.8%	Activity: 2.8%	Activity: 2.8%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+LostLight Reversal, Structs and Offsets
+Hi, everybody
+
+GameEngine: Messiah Engine
+used in many games including Knives Out, Badlanders and similar games
+
+Offsets:
+Code:
+#define adrObjects 0x39C8B98 //48 8D 2D ? ? ? ? 48 2B FD + 0x38
+#define adrD3D11Device 0x39B8DA8 //48 8B 0D ? ? ? ? 48 8B D9 48 89 4C 24 ? 45 33 ED 45 8D 65 FF 44 38 A9 ? ? ? ? 0F 84 ? ? ? ? 48 8B 49 30 E8 ? ? ? ? 89 44 24 48 48 8B 83 ? ? ? ? 48 8B 8B ? ? ? ? 48 89 4D A8 
+ 
+#define D3D11Device_CameraInfo 0x80
+ 
+#define ptrObject1 0x38
+#define ptrObject2 0x470
+Structures:
+Code:
+class CameraInfo
+{
+public:
+	char pad_0x0000[0x10]; //0x0000
+	Vec3 CamPos; //0x0010 
+	char pad_0x001C[0x4]; //0x001C
+	D3DXMATRIX Proj; //0x0020 
+	D3DXMATRIX View; //0x0060 
+	D3DXMATRIX ViewProj; //0x00A0 
+ 
+};
+ 
+struct Vector
+{
+	DWORD_PTR Begin;
+	DWORD_PTR Cur;
+	DWORD_PTR End;
+};
+Code:
+Code:
+			DWORD_PTR D3D11Device = Memory.Read<DWORD_PTR>(Memory.GameBase + adrD3D11Device);
+			DWORD_PTR p1 = Memory.Read<DWORD_PTR>(Memory.GameBase + adrObjects);
+			if (D3D11Device)
+			{
+				DWORD_PTR ptrCameraInfo = Memory.Read<DWORD_PTR>(D3D11Device + D3D11Device_CameraInfo);
+ 
+				DWORD_PTR p2 = Memory.Read<DWORD_PTR>(p1 + ptrObject1);
+ 
+				Vector Objects = Memory.Read<Vector>(p2 + ptrObject2);
+ 
+				CameraInfo Info = Memory.Read<CameraInfo>(ptrCameraInfo);
+ 
+				int Count = (Objects.End - Objects.Begin) / sizeof(DWORD_PTR);
+				if (Count > 1)
+				{
+					char Buf[128] = { 0 };
+ 
+					for (int i = 0; i < Count; i++)
+					{
+						DWORD_PTR CurObject = Memory.Read<DWORD_PTR>(Objects.Begin + i * (sizeof(DWORD_PTR)));
+						if (CurObject)
+						{
+							DWORD_PTR CurEntity = Memory.Read<DWORD_PTR>(CurObject - 0x10);
+							if (CurEntity)
+							{
+								int Type = Memory.Read<int>(CurEntity + 0x118);
+ 
+								if (Type == 1) //remove unnecessary objects for more correct sorting
+								{
+									D3DXVECTOR3 Pos = Memory.Read<D3DXVECTOR3>(CurEntity + 0x7C);
+									if (WorldToScreen(Pos, Screen, Info.ViewProj))
+									{
+ 
+										MyRender->Text(Screen.x, Screen.y, DT_CENTER, WHITE, "Object");
+ 
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+You can also get some information here and here
+
+Result:
+	This image has been resized. Click this bar to view the full image. The original image is sized 1920x1080.
+
+	This image has been resized. Click this bar to view the full image. The original image is sized 1920x1080.
+
+
+all this was done for reputation and attempts to raise the hacking experience, thank you
+__________________
+You gotta get used to me sitting on a bear drinking vodka and doing hack-s)
+
+Finz Rus is offline
+Last Active: Yesterday
+
+Add to Finz Rus's Reputation Take from Finz Rus's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 5th December 2021, 09:22 AM	  #2
+RaMzZzEsll
+n00bie
+
+
+RaMzZzEsll's Avatar
+
+Join Date: Jan 2014
+Posts: 18
+Reputation: 151
+Rep Power: 294
+RaMzZzEsll is known to create posts excellent in qualityRaMzZzEsll is known to create posts excellent in quality
+Points: 5,946, Level: 8
+Points: 5,946, Level: 8	Points: 5,946, Level: 8	Points: 5,946, Level: 8
+Level up: 50%, 554 Points needed
+Level up: 50%	Level up: 50%	Level up: 50%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+How to use it?
+What to use?
+RaMzZzEsll is offline
+Last Active: 25th January 2026
+
+Add to RaMzZzEsll's Reputation Take from RaMzZzEsll's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 6th December 2021, 12:20 AM	  #3
+xobot
+God-Like
+
+
+xobot's Avatar
+
+Join Date: Oct 2017
+Posts: 165
+Reputation: -361
+Rep Power: 0
+xobot is likely going to get bannedxobot is likely going to get bannedxobot is likely going to get bannedxobot is likely going to get banned
+Points: 5,431, Level: 8
+Points: 5,431, Level: 8	Points: 5,431, Level: 8	Points: 5,431, Level: 8
+Level up: 3%, 1,069 Points needed
+Level up: 3%	Level up: 3%	Level up: 3%
+Activity: 5.6%
+Activity: 5.6%	Activity: 5.6%	Activity: 5.6%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+ex it is a pity that I did not learn how to make cheats - code) I would very much like to play with the hack in this game ))
+xobot is offline
+Last Active: Yesterday
+
+Add to xobot's Reputation Take from xobot's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 10th December 2021, 02:56 PM	  #4
+7723
+n00bie
+
+
+7723's Avatar
+
+Join Date: May 2020
+Posts: 12
+Reputation: 10
+Rep Power: 140
+7723 has made posts that are generally average in quality
+Points: 1,946, Level: 3
+Points: 1,946, Level: 3	Points: 1,946, Level: 3	Points: 1,946, Level: 3
+Level up: 78%, 154 Points needed
+Level up: 78%	Level up: 78%	Level up: 78%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and Offsets
+Hello, I need more information about Messiah Engine
+7723 is offline
+Last Active: 18th January 2023
+
+Add to 7723's Reputation Take from 7723's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 15th December 2021, 02:47 PM	  #5
+1124715263
+n00bie
+
+
+1124715263's Avatar
+
+Join Date: Feb 2020
+Posts: 9
+Reputation: 10
+Rep Power: 146
+1124715263 has made posts that are generally average in quality
+Points: 1,465, Level: 3
+Points: 1,465, Level: 3	Points: 1,465, Level: 3	Points: 1,465, Level: 3
+Level up: 10%, 635 Points needed
+Level up: 10%	Level up: 10%	Level up: 10%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and Offsets
+so, how can distinguish Item like Badlanders ?
+thanks.
+1124715263 is offline
+Last Active: 31st August 2024
+
+Add to 1124715263's Reputation Take from 1124715263's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 23rd January 2022, 01:18 AM	  #6
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+do you have skd or new code
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 26th January 2022, 07:58 AM	  #7
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+that is the (Objects.End - Objects.Begin)
+
+what is the (Objects.End - Objects.Begin)
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 26th January 2022, 12:11 PM	  #8
+Finz Rus
+A God
+
+
+Finz Rus's Avatar
+
+Threadstarter
+Join Date: Mar 2017
+Posts: 198
+Reputation: 11003
+Rep Power: 230
+Finz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server spaceFinz Rus 's rep takes up 1 gig of server space
+Points: 23,687, Level: 21
+Points: 23,687, Level: 21	Points: 23,687, Level: 21	Points: 23,687, Level: 21
+Level up: 81%, 313 Points needed
+Level up: 81%	Level up: 81%	Level up: 81%
+Activity: 2.8%
+Activity: 2.8%	Activity: 2.8%	Activity: 2.8%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Quote:
+Originally Posted by a930232832 View Post
+that is the (Objects.End - Objects.Begin)
+
+what is the (Objects.End - Objects.Begin)
+struct Vector
+{
+DWORD_PTR Begin;
+DWORD_PTR Cur;
+DWORD_PTR End;
+};
+__________________
+You gotta get used to me sitting on a bear drinking vodka and doing hack-s)
+
+Finz Rus is offline
+Last Active: Yesterday
+
+Add to Finz Rus's Reputation Take from Finz Rus's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 27th January 2022, 03:41 AM	  #9
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+what is the sizeof(DWORD_PTR)
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 27th January 2022, 09:04 PM	  #10
+Scrollen
+n00bie
+
+
+Scrollen's Avatar
+
+Join Date: Jun 2016
+Posts: 4
+Reputation: 10
+Rep Power: 237
+Scrollen has made posts that are generally average in quality
+Points: 4,150, Level: 6
+Points: 4,150, Level: 6	Points: 4,150, Level: 6	Points: 4,150, Level: 6
+Level up: 62%, 350 Points needed
+Level up: 62%	Level up: 62%	Level up: 62%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Would love to understand how this is used.
+Scrollen is offline
+Last Active: 7th April 2023
+
+Add to Scrollen's Reputation Take from Scrollen's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 27th January 2022, 09:31 PM	  #11
+albanninou
+Junior Member
+
+
+albanninou's Avatar
+
+Join Date: Mar 2019
+Location: France
+Posts: 45
+Reputation: 211
+Rep Power: 169
+albanninou has just realized Source Code isnt a magazinealbanninou has just realized Source Code isnt a magazinealbanninou has just realized Source Code isnt a magazine
+Points: 2,806, Level: 5
+Points: 2,806, Level: 5	Points: 2,806, Level: 5	Points: 2,806, Level: 5
+Level up: 1%, 794 Points needed
+Level up: 1%	Level up: 1%	Level up: 1%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+what did you use for get offset ? i try reclass but not realy sucessfully ....
+__________________
+Sometimes life doesn’t give you what you want, it’s not because you don’t deserve it, but because you deserve it better
+albanninou is offline
+Last Active: 27th September 2025
+
+Add to albanninou's Reputation Take from albanninou's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 8th February 2022, 07:19 AM	  #12
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+i want litem String
+
+i cant find ltem string
+
+like baseplayer or tool
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 10th February 2022, 04:24 AM	  #13
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+hi Finz Rus ，The game has released a new client. Please tell me what tools you use to find GOM, IDA, DBG, CE, or od and how to find them
+
+Hi finz Rus, I have found a new address. Thank you. In addition, I need badlands. Please find it. Thank you, thank you, thank you
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 28th February 2022, 08:30 PM	  #14
+albanninou
+Junior Member
+
+
+albanninou's Avatar
+
+Join Date: Mar 2019
+Location: France
+Posts: 45
+Reputation: 211
+Rep Power: 169
+albanninou has just realized Source Code isnt a magazinealbanninou has just realized Source Code isnt a magazinealbanninou has just realized Source Code isnt a magazine
+Points: 2,806, Level: 5
+Points: 2,806, Level: 5	Points: 2,806, Level: 5	Points: 2,806, Level: 5
+Level up: 1%, 794 Points needed
+Level up: 1%	Level up: 1%	Level up: 1%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Quote:
+Originally Posted by a930232832 View Post
+hi Finz Rus ，The game has released a new client. Please tell me what tools you use to find GOM, IDA, DBG, CE, or od and how to find them
+
+Hi finz Rus, I have found a new address. Thank you. In addition, I need badlands. Please find it. Thank you, thank you, thank you
+how you find new adress pls ?
+__________________
+Sometimes life doesn’t give you what you want, it’s not because you don’t deserve it, but because you deserve it better
+albanninou is offline
+Last Active: 27th September 2025
+
+Add to albanninou's Reputation Take from albanninou's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 15th March 2022, 02:28 AM	  #15
+a930232832
+n00bie
+
+
+a930232832's Avatar
+
+Join Date: Jul 2019
+Location: chongqing
+Posts: 22
+Reputation: 10
+Rep Power: 162
+a930232832 has made posts that are generally average in quality
+Points: 3,040, Level: 5
+Points: 3,040, Level: 5	Points: 3,040, Level: 5	Points: 3,040, Level: 5
+Level up: 30%, 560 Points needed
+Level up: 30%	Level up: 30%	Level up: 30%
+Activity: 0%
+Activity: 0%	Activity: 0%	Activity: 0%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Quote:
+Originally Posted by albanninou View Post
+how you find new adress pls ?
+for CE
+
+Quote:
+Originally Posted by albanninou View Post
+how you find new adress pls ?
+for CE
+a930232832 is offline
+Last Active: 1st January 2024
+
+Add to a930232832's Reputation Take from a930232832's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 3rd April 2022, 04:37 AM	  #16
+tq08iue
+Junior Member
+
+
+tq08iue's Avatar
+
+Join Date: Mar 2016
+Posts: 53
+Reputation: 19
+Rep Power: 242
+tq08iue has made posts that are generally average in quality
+Points: 6,592, Level: 9
+Points: 6,592, Level: 9	Points: 6,592, Level: 9	Points: 6,592, Level: 9
+Level up: 9%, 1,008 Points needed
+Level up: 9%	Level up: 9%	Level up: 9%
+Activity: 2.3%
+Activity: 2.3%	Activity: 2.3%	Activity: 2.3%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Can you give me some basic information?
+tq08iue is offline
+Last Active: 7th June 2025
+
+Add to tq08iue's Reputation Take from tq08iue's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 3rd April 2022, 07:14 AM	  #17
+Ascarre
+Supreme H4x0|2
+
+
+Ascarre's Avatar
+
+Join Date: Mar 2020
+Location: India
+Posts: 591
+Reputation: 3867
+Rep Power: 152
+Ascarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating communityAscarre is a legend in the cheating community
+Points: 16,071, Level: 16
+Points: 16,071, Level: 16	Points: 16,071, Level: 16	Points: 16,071, Level: 16
+Level up: 77%, 329 Points needed
+Level up: 77%	Level up: 77%	Level up: 77%
+Activity: 7.1%
+Activity: 7.1%	Activity: 7.1%	Activity: 7.1%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Quote:
+Originally Posted by Finz Rus View Post
+Hi, everybody
+
+GameEngine: Messiah Engine
+used in many games including Knives Out, Badlanders and similar games
+
+Offsets:
+Code:
+#define adrObjects 0x39C8B98 //48 8D 2D ? ? ? ? 48 2B FD + 0x38
+#define adrD3D11Device 0x39B8DA8 //48 8B 0D ? ? ? ? 48 8B D9 48 89 4C 24 ? 45 33 ED 45 8D 65 FF 44 38 A9 ? ? ? ? 0F 84 ? ? ? ? 48 8B 49 30 E8 ? ? ? ? 89 44 24 48 48 8B 83 ? ? ? ? 48 8B 8B ? ? ? ? 48 89 4D A8 
+ 
+#define D3D11Device_CameraInfo 0x80
+ 
+#define ptrObject1 0x38
+#define ptrObject2 0x470
+Structures:
+Code:
+class CameraInfo
+{
+public:
+	char pad_0x0000[0x10]; //0x0000
+	Vec3 CamPos; //0x0010 
+	char pad_0x001C[0x4]; //0x001C
+	D3DXMATRIX Proj; //0x0020 
+	D3DXMATRIX View; //0x0060 
+	D3DXMATRIX ViewProj; //0x00A0 
+ 
+};
+ 
+struct Vector
+{
+	DWORD_PTR Begin;
+	DWORD_PTR Cur;
+	DWORD_PTR End;
+};
+Code:
+Code:
+			DWORD_PTR D3D11Device = Memory.Read<DWORD_PTR>(Memory.GameBase + adrD3D11Device);
+			DWORD_PTR p1 = Memory.Read<DWORD_PTR>(Memory.GameBase + adrObjects);
+			if (D3D11Device)
+			{
+				DWORD_PTR ptrCameraInfo = Memory.Read<DWORD_PTR>(D3D11Device + D3D11Device_CameraInfo);
+ 
+				DWORD_PTR p2 = Memory.Read<DWORD_PTR>(p1 + ptrObject1);
+ 
+				Vector Objects = Memory.Read<Vector>(p2 + ptrObject2);
+ 
+				CameraInfo Info = Memory.Read<CameraInfo>(ptrCameraInfo);
+ 
+				int Count = (Objects.End - Objects.Begin) / sizeof(DWORD_PTR);
+				if (Count > 1)
+				{
+					char Buf[128] = { 0 };
+ 
+					for (int i = 0; i < Count; i++)
+					{
+						DWORD_PTR CurObject = Memory.Read<DWORD_PTR>(Objects.Begin + i * (sizeof(DWORD_PTR)));
+						if (CurObject)
+						{
+							DWORD_PTR CurEntity = Memory.Read<DWORD_PTR>(CurObject - 0x10);
+							if (CurEntity)
+							{
+								int Type = Memory.Read<int>(CurEntity + 0x118);
+ 
+								if (Type == 1) //remove unnecessary objects for more correct sorting
+								{
+									D3DXVECTOR3 Pos = Memory.Read<D3DXVECTOR3>(CurEntity + 0x7C);
+									if (WorldToScreen(Pos, Screen, Info.ViewProj))
+									{
+ 
+										MyRender->Text(Screen.x, Screen.y, DT_CENTER, WHITE, "Object");
+ 
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+You can also get some information here and here
+
+Result:
+https://i.imgur.com/Eda5TIH.png
+https://i.imgur.com/uQW3UQZ.png
+
+all this was done for reputation and attempts to raise the hacking experience, thank you
+nice release...is this the pc version? anyway i will try to add more features and update if there is any
+
+Edit - How am i supposed to login to this? Never tried these kinda games...but i hope i can make something nice
+__________________
+
+
+
+Here, you dropped this
+Last edited by Ascarre; 3rd April 2022 at 10:05 AM.
+Ascarre is offline
+Last Active: 26th January 2026
+
+Add to Ascarre's Reputation Take from Ascarre's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 4th April 2022, 05:07 PM	  #18
+gr3gthepilot
+God-Like
+
+
+gr3gthepilot's Avatar
+
+Join Date: Jan 2021
+Posts: 164
+Reputation: 8284
+Rep Power: 133
+gr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATSgr3gthepilot DEFINES UNKNOWNCHEATS
+Recognitions
+Members who have contributed financial support towards UnKnoWnCheaTs. Donator (2)
+Points: 23,388, Level: 21
+Points: 23,388, Level: 21	Points: 23,388, Level: 21	Points: 23,388, Level: 21
+Level up: 62%, 612 Points needed
+Level up: 62%	Level up: 62%	Level up: 62%
+Activity: 2.4%
+Activity: 2.4%	Activity: 2.4%	Activity: 2.4%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Quote:
+Originally Posted by Finz Rus View Post
+Hi, everybody
+
+GameEngine: Messiah Engine
+used in many games including Knives Out, Badlanders and similar games
+
+Offsets:
+[CODE]
+#define adrObjects 0x39C8B98 //48 8D 2D ? ? ? ? 48 2B FD + 0x38
+...
+are there any anticheat measures in place yet?
+__________________
+| YOLOv5 Aim Augmentation v1.0 | YOLOv4 Aim Augmentation v2.0 |
+| BattleBit R.- Ballistic Computer formula | Pilotuino | Human Mouse Movement with AI |
+| Arduino Internals |
+
+"I write my code closer together, so it runs faster" - me
+gr3gthepilot is online now
+Last Active: Today
+
+Add to gr3gthepilot's Reputation Take from gr3gthepilot's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 15th May 2022, 10:24 AM	  #19
+JLNovaayKZ
+Posting Well
+
+
+JLNovaayKZ's Avatar
+
+Join Date: Mar 2022
+Location: FRANCE
+Posts: 25
+Reputation: -193
+Rep Power: 0
+JLNovaayKZ is nearly a complete Unknown AsshatJLNovaayKZ is nearly a complete Unknown Asshat
+Points: 2,442, Level: 4
+Points: 2,442, Level: 4	Points: 2,442, Level: 4	Points: 2,442, Level: 4
+Level up: 49%, 358 Points needed
+Level up: 49%	Level up: 49%	Level up: 49%
+Activity: 3.2%
+Activity: 3.2%	Activity: 3.2%	Activity: 3.2%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+How to use it ? and with what?
+JLNovaayKZ is offline
+Last Active: 13th February 2026
+
+Add to JLNovaayKZ's Reputation Take from JLNovaayKZ's reputation. Report Post Reply With Quote Multi-Quote This Message Quick reply to this message
+ 
+Old 2nd July 2022, 12:08 PM	  #20
+1LUX4N0J0NF1R3
+Supreme H4x0|2
+
+
+1LUX4N0J0NF1R3's Avatar
+
+Join Date: Sep 2018
+Posts: 656
+Reputation: 4757
+Rep Power: 191
+1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community1LUX4N0J0NF1R3 is a legend in the cheating community
+Points: 16,171, Level: 16
+Points: 16,171, Level: 16	Points: 16,171, Level: 16	Points: 16,171, Level: 16
+Level up: 84%, 229 Points needed
+Level up: 84%	Level up: 84%	Level up: 84%
+Activity: 9.5%
+Activity: 9.5%	Activity: 9.5%	Activity: 9.5%
+Last Achievements
+LostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and OffsetsLostLight Reversal, Structs and Offsets
+Code:
+device 0x39D6828
+objects 0x39E6610 + 0x28 / 0x38
+does anyone know how to sort players?
+
+
+
+
+
+
+
+
+*ID3D11Device: Game.exe+293B778 (E8 ? ? ? ? 8B 4D E0 83 C4 04 8B D0  + 0x2C)
+*ClientEngine: Game.exe+293B840
+*IGamePlay: Engine + 0x58
+*ClientScenario: IGamePlay + 0x34
+*ICamera: ClientScenario + 0x14 + 0x158 (Matrix) 
+*ClientPlayer: ClientScenario + 0x10
+*IEntity: ClientPlayer + 0x11C
+*Internal ModelList: IEntity + 0x210
+*IWorld: IEntity + 0x64
+*ClientScene: IWorld + 0x28
+*CubeEnviroment (UNK): ClientScene + 0x18
+*ModelComponentList (unk): CubeEnviroment + 0x3F0
+*ObjectModule: Game.exe+293EC80
+*Win32Game: Game.exe+293B640
+**************************************************
+Some Classes
+
+Code:
+class Base
+{
+public:
+	class Engine *pEngine; //0x0000
+	char pad_0004[60]; //0x0004
+}; //Size: 0x0040
+static_assert(sizeof(Base) == 0x40);
+ 
+class Engine
+{
+public:
+	char pad_0000[4]; //0x0000
+	char *EngineVersion; //0x0004
+	char pad_0008[80]; //0x0008
+	class GamePlay *pGamePlay; //0x0058
+	char pad_005C[324]; //0x005C
+	class SceneView *pSceneView; //0x01A0
+	char pad_01A4[1688]; //0x01A4
+}; //Size: 0x083C
+static_assert(sizeof(Engine) == 0x83C);
+ 
+class SceneView
+{
+public:
+	char pad_0000[12]; //0x0000
+	class MainView *pMainView; //0x000C
+	char pad_0010[52]; //0x0010
+}; //Size: 0x0044
+static_assert(sizeof(SceneView) == 0x44);
+ 
+class MainView
+{
+public:
+	char pad_0000[32]; //0x0000
+	class D3D11View *pD3D11View; //0x0020
+	class RenderPipeline *pRenderPipeline; //0x0024
+	char pad_0028[4]; //0x0028
+	class PerpectiveCamera *pPerpectiveCamera; //0x002C
+	char pad_0030[456]; //0x0030
+	class SceneViewPort *pSceneViewport; //0x01F8
+	char pad_01FC[3656]; //0x01FC
+}; //Size: 0x1044
+static_assert(sizeof(MainView) == 0x1044);
+ 
+class D3D11View
+{
+public:
+	char pad_0000[28]; //0x0000
+	class D3D11RenderTarget *pD3D11RenderTarget; //0x001C
+	char pad_0020[2084]; //0x0020
+}; //Size: 0x0844
+static_assert(sizeof(D3D11View) == 0x844);
+ 
+class D3D11RenderTarget
+{
+public:
+	char pad_0000[2108]; //0x0000
+}; //Size: 0x083C
+static_assert(sizeof(D3D11RenderTarget) == 0x83C);
+ 
+class RenderPipeline
+{
+public:
+	char pad_0000[8]; //0x0000
+	class CustomPipeline *pCustomPipeline; //0x0008
+	char pad_000C[1076]; //0x000C
+}; //Size: 0x0440
+static_assert(sizeof(RenderPipeline) == 0x440);
+ 
+class CustomPipeline
+{
+public:
+	char pad_0000[68]; //0x0000
+	class Frustum *pFrustum; //0x0044
+	char pad_0048[120]; //0x0048
+	Matrix4x4 MulMatrix; //0x00C0
+	Matrix4x4 MulMatrix2; //0x0100
+	char pad_0140[1908]; //0x0140
+}; //Size: 0x08B4
+static_assert(sizeof(CustomPipeline) == 0x8B4);
+ 
+class Frustum
+{
+public:
+	char pad_0000[176]; //0x0000
+	Matrix4x4 FMatrix; //0x00B0
+	Matrix4x4 FMatrix2; //0x00F0
+	char pad_0130[1920]; //0x0130
+}; //Size: 0x08B0
+static_assert(sizeof(Frustum) == 0x8B0);
+ 
+class PerpectiveCamera
+{
+public:
+	Matrix4x4 PerspectiveMatrix; //0x0000
+	char pad_0040[2076]; //0x0040
+}; //Size: 0x085C
+static_assert(sizeof(PerpectiveCamera) == 0x85C);
+ 
+class SceneViewPort
+{
+public:
+	char pad_0000[1080]; //0x0000
+}; //Size: 0x0438
+static_assert(sizeof(SceneViewPort) == 0x438);
+ 
+class GamePlay
+{
+public:
+	char pad_0000[44]; //0x0000
+	class Controller *pController; //0x002C
+	char pad_0030[2068]; //0x0030
+}; //Size: 0x0844
+static_assert(sizeof(GamePlay) == 0x844);
+ 
+class Controller
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Player *pPlayer; //0x0014
+	char pad_0018[140]; //0x0018
+	class InputHandler *pInputHandler; //0x00A4
+	char pad_00A8[3992]; //0x00A8
+}; //Size: 0x1040
+static_assert(sizeof(Controller) == 0x1040);
+ 
+class Player
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Scenario *pScenario; //0x0014
+	char pad_0018[260]; //0x0018
+	class Entity *pEntity; //0x011C
+	char pad_0120[1828]; //0x0120
+}; //Size: 0x0844
+static_assert(sizeof(Player) == 0x844);
+ 
+class Scenario
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Camera *pCamera; //0x0014
+	char pad_0018[208]; //0x0018
+	class World *pWorld; //0x00E8
+	char pad_00EC[3928]; //0x00EC
+}; //Size: 0x1044
+static_assert(sizeof(Scenario) == 0x1044);
+ 
+class Camera
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Manipulator *pManipulator; //0x0014
+	char pad_0018[8]; //0x0018
+	Matrix4x4 CameraMatrix; //0x0020
+	char pad_0060[2072]; //0x0060
+}; //Size: 0x0878
+static_assert(sizeof(Camera) == 0x878);
+ 
+class Manipulator
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Navigator *pNavigator; //0x0014
+	char pad_0018[44]; //0x0018
+}; //Size: 0x0044
+static_assert(sizeof(Manipulator) == 0x44);
+ 
+class Navigator
+{
+public:
+	char pad_0000[20]; //0x0000
+	class SoundComponentEx *pSoundComponentEx; //0x0014
+	char pad_0018[44]; //0x0018
+}; //Size: 0x0044
+static_assert(sizeof(Navigator) == 0x44);
+ 
+class SoundComponentEx
+{
+public:
+	char pad_0000[2116]; //0x0000
+}; //Size: 0x0844
+static_assert(sizeof(SoundComponentEx) == 0x844);
+ 
+class World
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Level *pLevel; //0x0014
+	char pad_0018[140]; //0x0018
+	class SceneComponent *pSceneComponent; //0x00A4
+	char pad_00A8[3996]; //0x00A8
+}; //Size: 0x1044
+static_assert(sizeof(World) == 0x1044);
+ 
+class SceneComponent
+{
+public:
+	char pad_0000[20]; //0x0000
+	class StoryBoard *pStoryBoard; //0x0014
+	char pad_0018[16]; //0x0018
+	class ClientScene *pClientScene; //0x0028
+	char pad_002C[172]; //0x002C
+	class ClientSpace *pClientSpace; //0x00D8
+	char pad_00DC[1884]; //0x00DC
+}; //Size: 0x0838
+static_assert(sizeof(SceneComponent) == 0x838);
+ 
+class StoryBoard
+{
+public:
+	char pad_0000[800]; //0x0000
+	class NpFactory *pNpFactory; //0x0320
+	char pad_0324[632]; //0x0324
+	class LodModelHolder *pLodModelHolder; //0x059C
+	char pad_05A0[2716]; //0x05A0
+}; //Size: 0x103C
+static_assert(sizeof(StoryBoard) == 0x103C);
+ 
+class NpFactory
+{
+public:
+	char pad_0000[12]; //0x0000
+	class PhysxVector *pPhysxVector; //0x000C
+	char pad_0010[36]; //0x0010
+	class PhysxFnVector *pPhysxFnVector; //0x0034
+	char pad_0038[36]; //0x0038
+	class PhysxFieldVector *pPhysxFieldVector; //0x005C
+	char pad_0060[2016]; //0x0060
+}; //Size: 0x0840
+static_assert(sizeof(NpFactory) == 0x840);
+ 
+class PhysxVector
+{
+public:
+	char pad_0000[4164]; //0x0000
+}; //Size: 0x1044
+static_assert(sizeof(PhysxVector) == 0x1044);
+ 
+class PhysxFnVector
+{
+public:
+	char pad_0000[4164]; //0x0000
+}; //Size: 0x1044
+static_assert(sizeof(PhysxFnVector) == 0x1044);
+ 
+class PhysxFieldVector
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(PhysxFieldVector) == 0x44);
+ 
+class LodModelHolder
+{
+public:
+	char pad_0000[2116]; //0x0000
+}; //Size: 0x0844
+static_assert(sizeof(LodModelHolder) == 0x844);
+ 
+class ClientScene
+{
+public:
+	char pad_0000[24]; //0x0000
+	class CubeEnviroment *pCubeEnviroment; //0x0018
+	char pad_001C[4096]; //0x001C
+}; //Size: 0x101C
+static_assert(sizeof(ClientScene) == 0x101C);
+ 
+class ClientSpace
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(ClientSpace) == 0x44);
+ 
+class Level
+{
+public:
+	char pad_0000[20]; //0x0000
+	class Area *pArea; //0x0014
+	char pad_0018[4140]; //0x0018
+}; //Size: 0x1044
+static_assert(sizeof(Level) == 0x1044);
+ 
+class Area
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(Area) == 0x44);
+ 
+class Entity
+{
+public:
+	char pad_0000[4]; //0x0000
+	class ObjectData *pObjectData; //0x0004
+	char pad_0008[4]; //0x0008
+	char *EntityType; //0x000C
+	class Sensor *pSensor; //0x0010
+	char pad_0014[12]; //0x0014
+	class ComponentGroups *pComponentGroups; //0x0020
+	char pad_0024[8]; //0x0024
+	Vector4 Min; //0x002C
+	char pad_003C[4]; //0x003C
+	Vector4 Max; //0x0040
+	Vector3 Origin; //0x0050
+	char pad_005C[4112]; //0x005C
+}; //Size: 0x106C
+static_assert(sizeof(Entity) == 0x106C);
+ 
+class CubeEnviroment
+{
+public:
+	char pad_0000[4164]; //0x0000
+}; //Size: 0x1044
+static_assert(sizeof(CubeEnviroment) == 0x1044);
+ 
+class InputHandler
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(InputHandler) == 0x44);
+ 
+class Sensor
+{
+public:
+	char pad_0000[16]; //0x0000
+	class CameraChecker *pCameraChecker; //0x0010
+	char pad_0014[48]; //0x0014
+}; //Size: 0x0044
+static_assert(sizeof(Sensor) == 0x44);
+ 
+class CameraChecker
+{
+public:
+	char pad_0000[16]; //0x0000
+	class ShapeWrapper *pShapeWrapper; //0x0010
+	char pad_0014[112]; //0x0014
+	class CharacterCollisionNode *pCharacterCollisionNode; //0x0084
+	char pad_0088[4028]; //0x0088
+}; //Size: 0x1044
+static_assert(sizeof(CameraChecker) == 0x1044);
+ 
+class CharacterCollisionNode
+{
+public:
+	char pad_0000[2116]; //0x0000
+}; //Size: 0x0844
+static_assert(sizeof(CharacterCollisionNode) == 0x844);
+ 
+class ShapeWrapper
+{
+public:
+	char pad_0000[16]; //0x0000
+	class TpsCollider *pTpsCollider; //0x0010
+	char pad_0014[48]; //0x0014
+}; //Size: 0x0044
+static_assert(sizeof(ShapeWrapper) == 0x44);
+ 
+class TpsCollider
+{
+public:
+	char pad_0000[16]; //0x0000
+	class CameraShaker *pCameraShaker; //0x0010
+	char pad_0014[48]; //0x0014
+}; //Size: 0x0044
+static_assert(sizeof(TpsCollider) == 0x44);
+ 
+class CameraShaker
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(CameraShaker) == 0x44);
+ 
+class ModelComponent
+{
+public:
+	char pad_0000[16]; //0x0000
+	class TachComponent *pTachComponent; //0x0010
+	char pad_0014[108]; //0x0014
+	Vector3 Origin; //0x0080
+	char pad_008C[1976]; //0x008C
+}; //Size: 0x0844
+static_assert(sizeof(ModelComponent) == 0x844);
+ 
+class TachComponent
+{
+public:
+	char pad_0000[16]; //0x0000
+	class AppareanceComponent *pAppareanceComponent; //0x0010
+	char pad_0014[48]; //0x0014
+}; //Size: 0x0044
+static_assert(sizeof(TachComponent) == 0x44);
+ 
+class AppareanceComponent
+{
+public:
+	char pad_0000[16]; //0x0000
+	class SkeletonComponent *pSkeletonComponent; //0x0010
+	char pad_0014[48]; //0x0014
+}; //Size: 0x0044
+static_assert(sizeof(AppareanceComponent) == 0x44);
+ 
+class SkeletonComponent
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(SkeletonComponent) == 0x44);
+ 
+class ObjectData
+{
+public:
+	char pad_0000[12]; //0x0000
+	char *DataType; //0x000C
+	char pad_0010[52]; //0x0010
+}; //Size: 0x0044
+static_assert(sizeof(ObjectData) == 0x44);
+ 
+class ComponentGroups
+{
+public:
+	char pad_0000[4]; //0x0000
+	class ActorComponent *pActorComponent; //0x0004
+	class AppareanceComponent *pAppareanceComponent; //0x0008
+	class TachComponent *pTachComponent; //0x000C
+	char pad_0010[52]; //0x0010
+}; //Size: 0x0044
+static_assert(sizeof(ComponentGroups) == 0x44);
+ 
+class ActorComponent
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(ActorComponent) == 0x44);
+ 
+class AppareanceComponent
+{
+public:
+	char pad_0000[68]; //0x0000
+}; //Size: 0x0044
+static_assert(sizeof(AppareanceComponent) == 0x44);
+ 
+class TachComponent
+{
+public:
+	char pad_0000[20]; //0x0000
+	class ModelComponent *pModelComponent; //0x0014
+	char pad_0018[44]; //0x0018
+}; //Size: 0x0044
+static_assert(sizeof(TachComponent) == 0x44);
+ 
+class ModelComponent
+{
+public:
+	char pad_0000[2116]; //0x0000
+}; //Size: 0x0844
+static_assert(sizeof(ModelComponent) == 0x844);
+Final Result:
