@@ -1,9 +1,7 @@
-name: iOS Mod Menu Build
+name: Bloodstrike Mod Menu Build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
@@ -14,17 +12,27 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
-
-    - name: Build Dynamic Library
+    - name: Set up Theos
       run: |
-        make
+        brew install ldid
+        rm -rf ~/theos
+        export THEOS=~/theos
+        git clone --recursive https://github.com/theos/theos.git $THEOS
+        # Clonar SDKs directamente para evitar errores de tar/archivo
+        rm -rf $THEOS/sdks
+        git clone --depth 1 https://github.com/theos/sdks.git $THEOS/sdks
 
-    - name: Upload Artifact
+    - name: Build Dylib
+      run: |
+        export THEOS=~/theos
+        cd panel
+        make clean
+        make
+      env:
+        THEOS: ~/theos
+
+    - name: Upload Dylib
       uses: actions/upload-artifact@v4
       with:
-        name: ModMenu.dylib
-        path: ModMenu.dylib
+        name: Bloodstrike_ModMenu_Dylib
+        path: panel/*.dylib
