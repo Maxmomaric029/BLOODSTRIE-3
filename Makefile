@@ -1,26 +1,29 @@
-TARGET = ModMenu
-ARCHS = arm64
+# Makefile para Bloodstrike iOS Mod Menu
+# Desarrollado para compatibilidad máxima con GitHub Actions
+
 SYSROOT = $(shell xcrun --sdk iphoneos --show-sdk-path)
-CC = $(shell xcrun --sdk iphoneos --find clang)
-CXX = $(shell xcrun --sdk iphoneos --find clang++)
+ARCH = arm64
 
-CFLAGS = -isysroot $(SYSROOT) -arch $(ARCHS) -fobjc-arc -O2 -Wall
-LDFLAGS = -dynamiclib -undefined dynamic_lookup -framework Foundation -framework UIKit -lc++
+# Compiladores
+CC = xcrun --sdk iphoneos clang
+CXX = xcrun --sdk iphoneos clang++
 
-SOURCES = ModMenu.mm Math.cpp
-OBJECTS = $(SOURCES:.mm=.o)
-OBJECTS := $(OBJECTS:.cpp=.o)
+# Flags comunes
+COMMON_FLAGS = -isysroot $(SYSROOT) -arch $(ARCH) -fobjc-arc -O2 -Wall
 
-all: $(TARGET).dylib
+# Flags de enlace (Linking)
+LDFLAGS = $(COMMON_FLAGS) -dynamiclib -undefined dynamic_lookup -framework Foundation -framework UIKit -lc++
 
-$(TARGET).dylib: $(OBJECTS)
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
+all: ModMenu.dylib
 
-%.o: %.mm
-	$(CC) $(CFLAGS) -c $< -o $@
+ModMenu.dylib: ModMenu.o Math.o
+	$(CXX) $(LDFLAGS) -o ModMenu.dylib ModMenu.o Math.o
 
-%.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+ModMenu.o: ModMenu.mm
+	$(CC) $(COMMON_FLAGS) -c ModMenu.mm -o ModMenu.o
+
+Math.o: Math.cpp
+	$(CXX) $(COMMON_FLAGS) -c Math.cpp -o Math.o
 
 clean:
-	rm -f $(OBJECTS) $(TARGET).dylib
+	rm -f *.o ModMenu.dylib

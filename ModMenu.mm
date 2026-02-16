@@ -167,7 +167,7 @@ void HackLoop() {
                 uintptr_t p1 = *(uintptr_t*)(objectsBasePtr + ptrObject1);
                 
                 if (cameraInfoPtr && p1) {
-                    CameraInfo *info = (CameraInfo*)cameraInfoPtr;
+                    CameraInfo *info __attribute__((unused)) = (CameraInfo*)cameraInfoPtr;
                     GameVector *objects = (GameVector*)(p1 + ptrObject2);
                     
                     int count = (objects->End - objects->Begin) / sizeof(uintptr_t);
