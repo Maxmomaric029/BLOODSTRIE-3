@@ -109,6 +109,19 @@ bool godModeEnabled = false;
 // LÓGICA DEL HACK / HACK LOGIC
 // ==========================================
 
+// Helper para obtener el tamaño de pantalla sin usar mainScreen (depreciado)
+CGRect GetScreenBounds() {
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if (scene.activationState == UISceneActivationStateForegroundActive && [scene isKindOfClass:[UIWindowScene class]]) {
+            return ((UIWindowScene *)scene).screen.bounds;
+        }
+    }
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    return [UIScreen mainScreen].bounds;
+    #pragma clang diagnostic pop
+}
+
 bool WorldToScreen(Vec3 worldPos, Vector2 &screenPos, Matrix4x4 viewProj) {
     float x = worldPos.x * viewProj.m[0][0] + worldPos.y * viewProj.m[1][0] + worldPos.z * viewProj.m[2][0] + viewProj.m[3][0];
     float y = worldPos.x * viewProj.m[0][1] + worldPos.y * viewProj.m[1][1] + worldPos.z * viewProj.m[2][1] + viewProj.m[3][1];
@@ -120,9 +133,7 @@ bool WorldToScreen(Vec3 worldPos, Vector2 &screenPos, Matrix4x4 viewProj) {
     x *= invW;
     y *= invW;
 
-    CGRect screenBounds = [UIScreen mainScreen].bounds;
-    // En iOS modernos, preferiblemente usar el bounds de la escena si es posible, 
-    // pero para un dylib inyectado esto suele ser suficiente o ajustable.
+    CGRect screenBounds = GetScreenBounds();
     float width = screenBounds.size.width;
     float height = screenBounds.size.height;
 
@@ -189,7 +200,7 @@ void SetupMenu() {
         if (scene) {
             menuWindow = [[UIWindow alloc] initWithWindowScene:scene];
         } else {
-            menuWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+            menuWindow = [[UIWindow alloc] initWithFrame:GetScreenBounds()];
         }
 
         menuWindow.windowLevel = UIWindowLevelAlert + 1;

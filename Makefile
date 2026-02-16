@@ -14,7 +14,7 @@ OBJECTS := $(OBJECTS:.cpp=.o)
 all: $(TARGET).dylib
 
 $(TARGET).dylib: $(OBJECTS)
-	$(CXX) $(LDFLAGS) -o $@ $^
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 %.o: %.mm
 	$(CC) $(CFLAGS) -c $< -o $@
