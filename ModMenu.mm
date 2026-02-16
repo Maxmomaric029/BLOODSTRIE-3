@@ -11,12 +11,14 @@
 
 // Variables globales para el estado de los trucos
 bool aimbotEnabled = false;
+bool silentAimEnabled = false;
 bool espEnabled = false;
 bool godModeEnabled = false;
 
 @interface MenuController : UIViewController
 @property (nonatomic, strong) UIView *menuView;
 @property (nonatomic, strong) UISwitch *aimbotSwitch;
+@property (nonatomic, strong) UISwitch *silentAimSwitch;
 @property (nonatomic, strong) UISwitch *espSwitch;
 @property (nonatomic, strong) UISwitch *godModeSwitch;
 @end
@@ -27,7 +29,7 @@ bool godModeEnabled = false;
     [super viewDidLoad];
     
     // Crear ventana del menú (Menu Window)
-    self.menuView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 250)];
+    self.menuView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 300)];
     self.menuView.center = self.view.center;
     self.menuView.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:0.9];
     self.menuView.layer.cornerRadius = 10;
@@ -47,15 +49,18 @@ bool godModeEnabled = false;
     // Aimbot Switch
     [self createSwitch:@"Aimbot" yPos:50 target:self selector:@selector(toggleAimbot:) ref:self.aimbotSwitch];
     
+    // Silent Aim Switch
+    [self createSwitch:@"Silent Aim (Kill)" yPos:90 target:self selector:@selector(toggleSilentAim:) ref:self.silentAimSwitch];
+    
     // ESP Switch
-    [self createSwitch:@"ESP" yPos:100 target:self selector:@selector(toggleESP:) ref:self.espSwitch];
+    [self createSwitch:@"ESP" yPos:130 target:self selector:@selector(toggleESP:) ref:self.espSwitch];
     
     // God Mode Switch
-    [self createSwitch:@"God Mode" yPos:150 target:self selector:@selector(toggleGodMode:) ref:self.godModeSwitch];
+    [self createSwitch:@"God Mode" yPos:170 target:self selector:@selector(toggleGodMode:) ref:self.godModeSwitch];
     
     // Botón Cerrar (Close Button)
     UIButton *closeBtn = [UIButton buttonWithType:UIButtonTypeSystem];
-    closeBtn.frame = CGRectMake(100, 200, 100, 30);
+    closeBtn.frame = CGRectMake(100, 250, 100, 30);
     [closeBtn setTitle:@"Ocultar" forState:UIControlStateNormal];
     [closeBtn setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
     [closeBtn addTarget:self action:@selector(hideMenu) forControlEvents:UIControlEventTouchUpInside];
@@ -76,6 +81,11 @@ bool godModeEnabled = false;
 - (void)toggleAimbot:(UISwitch*)sender {
     aimbotEnabled = sender.isOn;
     NSLog(@"[ModMenu] Aimbot: %@", aimbotEnabled ? @"ON" : @"OFF");
+}
+
+- (void)toggleSilentAim:(UISwitch*)sender {
+    silentAimEnabled = sender.isOn;
+    NSLog(@"[ModMenu] Silent Aim: %@", silentAimEnabled ? @"ON" : @"OFF");
 }
 
 - (void)toggleESP:(UISwitch*)sender {
@@ -147,9 +157,10 @@ void HackLoop() {
     uintptr_t baseAddr = (uintptr_t)_dyld_get_image_header(0);
     
     while (true) {
-        if (aimbotEnabled || espEnabled) {
+        if (aimbotEnabled || espEnabled || silentAimEnabled) {
             uintptr_t d3d11DevicePtr = *(uintptr_t*)(baseAddr + adrD3D11Device);
             uintptr_t objectsBasePtr = *(uintptr_t*)(baseAddr + adrObjects);
+            uintptr_t localPlayerPtr = *(uintptr_t*)(baseAddr + OFF_LocalPlayer);
             
             if (d3d11DevicePtr && objectsBasePtr) {
                 uintptr_t cameraInfoPtr = *(uintptr_t*)(d3d11DevicePtr + D3D11Device_CameraInfo);
@@ -157,18 +168,50 @@ void HackLoop() {
                 
                 if (cameraInfoPtr && p1) {
                     CameraInfo *info = (CameraInfo*)cameraInfoPtr;
-                    (void)info; // Marcar como usado para evitar warning
                     GameVector *objects = (GameVector*)(p1 + ptrObject2);
                     
                     int count = (objects->End - objects->Begin) / sizeof(uintptr_t);
-                    if (count > 0 && count < 1000) { // Safety check
+                    
+                    uintptr_t bestTarget = 0;
+                    float minDistance = 9999.0f;
+                    Vector2 screenCenter = {[UIScreen mainScreen].bounds.size.width / 2.0f, [UIScreen mainScreen].bounds.size.height / 2.0f};
+
+                    if (count > 0 && count < 1000) {
                         for (int i = 0; i < count; i++) {
                             uintptr_t curObject = *(uintptr_t*)(objects->Begin + i * sizeof(uintptr_t));
                             if (curObject) {
                                 uintptr_t curEntityPtr = *(uintptr_t*)(curObject - 0x10);
                                 if (curEntityPtr) {
-                                    // ESP logic
+                                    Entity *ent = (Entity*)curEntityPtr;
+                                    if (!ent->IsDead) {
+                                        Vector2 screenPos;
+                                        if (WorldToScreen(ent->Origin, screenPos, info->ViewProj)) {
+                                            float dist = sqrtf(pow(screenPos.x - screenCenter.x, 2) + pow(screenPos.y - screenCenter.y, 2));
+                                            if (dist < minDistance) {
+                                                minDistance = dist;
+                                                bestTarget = curEntityPtr;
+                                            }
+                                        }
+                                    }
                                 }
+                            }
+                        }
+                    }
+
+                    // Silent Aim Logic (Aimkill) from a.txt
+                    if (silentAimEnabled && bestTarget && localPlayerPtr) {
+                        bool isShooting = *(bool*)(localPlayerPtr + OFF_sAim1);
+                        if (isShooting) {
+                            uintptr_t weaponData = *(uintptr_t*)(localPlayerPtr + OFF_sAim2);
+                            if (weaponData) {
+                                Entity *targetEnt = (Entity*)bestTarget;
+                                Vec3 targetHead = targetEnt->Origin; // Usar Origin como fallback si no hay Bone Head offset
+                                targetHead.y += 0.1f; // Ajuste leve para la cabeza
+
+                                Vec3 startPos = *(Vec3*)(weaponData + OFF_sAim3);
+                                Vec3 aimPosition = targetHead - startPos;
+                                
+                                *(Vec3*)(weaponData + OFF_sAim4) = aimPosition;
                             }
                         }
                     }
@@ -183,7 +226,33 @@ void HackLoop() {
 // PUNTO DE ENTRADA / ENTRY POINT
 // ==========================================
 
-static UIWindow *menuWindow = nil;
+@interface PassthroughWindow : UIWindow
+@end
+
+@implementation PassthroughWindow
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hitView = [super hitTest:point withEvent:event];
+    
+    // 1. Si el toque es exactamente el botón flotante, capturarlo
+    if (hitView == floatingBtn) {
+        return hitView;
+    }
+    
+    // 2. Si el menú está abierto y el toque es dentro del área del menú, capturarlo
+    if (menuCtrl && menuCtrl.menuView && !menuCtrl.menuView.hidden) {
+        CGPoint pointInMenuView = [menuCtrl.menuView convertPoint:point fromView:self];
+        if ([menuCtrl.menuView pointInside:pointInMenuView withEvent:event]) {
+            return hitView;
+        }
+    }
+    
+    // 3. EN CUALQUIER OTRO CASO, ignorar el toque y pasarlo al juego
+    // Esto incluye el fondo de la ventana y áreas transparentes
+    return nil;
+}
+@end
+
+static PassthroughWindow *menuWindow = nil;
 static MenuController *menuCtrl = nil;
 static UIButton *floatingBtn = nil;
 
@@ -197,10 +266,11 @@ void SetupMenu() {
             }
         }
 
+        CGRect bounds = GetScreenBounds();
         if (scene) {
-            menuWindow = [[UIWindow alloc] initWithWindowScene:scene];
+            menuWindow = [[PassthroughWindow alloc] initWithWindowScene:scene];
         } else {
-            menuWindow = [[UIWindow alloc] initWithFrame:GetScreenBounds()];
+            menuWindow = [[PassthroughWindow alloc] initWithFrame:bounds];
         }
 
         menuWindow.windowLevel = UIWindowLevelAlert + 1;
