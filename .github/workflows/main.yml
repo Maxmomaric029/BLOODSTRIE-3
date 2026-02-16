@@ -12,24 +12,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Theos
+    - name: Set up Environment
       run: |
         brew install ldid
-        rm -rf ~/theos
-        export THEOS=~/theos
-        git clone --recursive https://github.com/theos/theos.git $THEOS
-        # Clonar SDKs directamente para evitar errores de tar/archivo
-        rm -rf $THEOS/sdks
-        git clone --depth 1 https://github.com/theos/sdks.git $THEOS/sdks
+        # No clonamos Theos SDKs aquí para evitar conflictos, usaremos los de Xcode del sistema
 
     - name: Build Dylib
       run: |
-        export THEOS=~/theos
         cd panel
+        # Usar el Makefile corregido que detecta el SDK del sistema
         make clean
         make
-      env:
-        THEOS: ~/theos
 
     - name: Upload Dylib
       uses: actions/upload-artifact@v4
