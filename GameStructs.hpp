@@ -10,7 +10,7 @@
 #define ptrObject1 0x38
 #define ptrObject2 0x470
 
-// Nuevos Offsets de offsets2.txt
+// Offsets extraídos de offsets2.txt
 #define OFF_CurrentMatch 0x50
 #define OFF_LocalPlayer 0x44
 #define OFF_DictionaryEntities 0x68
@@ -20,7 +20,7 @@
 #define OFF_Avatar 0x18
 #define OFF_Avatar_Data 0x10
 
-// Silent Aim Offsets
+// Silent Aim (AimKill) Offsets
 #define OFF_sAim1 0x4a0 // isShooting (bool)
 #define OFF_sAim2 0x874 // weaponData (uintptr_t)
 #define OFF_sAim3 0x38  // startPos (Vec3)
@@ -55,10 +55,9 @@ struct GameVector {
 class Entity {
 public:
     char pad_0000[0x4c];
-    bool IsDead; // 0x004c
+    bool IsDead; // 0x4c
     char pad_004d[3];
-    Vec3 Origin; // 0x0050
-    // Otros campos...
+    Vec3 Origin; // 0x50
 };
 
-#endif // GAME_STRUCTS_HPP
+#endif

@@ -1,26 +1,6 @@
 #include "Math.hpp"
 
-// Port of FUN_140001240 (Trig table initialization)
-void InitTrigTable(float* table, int size) {
-    // Limpiar memoria
-    // Clear memory
-    memset(table, 0, size * sizeof(float));
-
-    // Lógica original adaptada: generar tabla de senos/cosenos
-    // Adapted original logic: generate sine/cosine table
-    // El original usaba un bucle con punteros, aquí lo simplificamos
-    // The original used a pointer loop, here we simplify it
-    for (int i = 0; i < size; ++i) {
-        float angle = (float)i;
-        float rads = ((angle + angle) * 3.1415927f) / 48.0f;
-        table[i * 2] = cosf(rads);
-        table[i * 2 + 1] = sinf(rads);
-    }
-}
-
-// Port of FUN_1400024c0 (Vector Math / Intersection?)
-// Esta función parece realizar cálculos vectoriales complejos, posiblemente interpolación o intersección.
-// This function seems to perform complex vector calculations, possibly interpolation or intersection.
+// Portación exacta de FUN_1400024c0 (Cálculos vectoriales complejos)
 void CalculateVector(float* output, float* input1, float* input2, float* input3, float* input4) {
     float fVar1, fVar2, fVar3, fVar4, fVar5, fVar6, fVar7, fVar8, fVar9;
     float fVar10, fVar11, fVar12, fVar13, fVar14, fVar15, fVar16;
@@ -95,14 +75,13 @@ void CalculateVector(float* output, float* input1, float* input2, float* input3,
     }
 }
 
-// Port of FUN_140002cc0 (Color Float to Int/Hex)
+// Portación de FUN_140002cc0 (Conversión de Color Float a UInt)
 unsigned int ColorToUInt(float* color) {
     float r = color[0];
     float g = color[1];
     float b = color[2];
     float a = color[3];
 
-    // Clamp values 0.0 - 1.0
     if (r < 0.0f) r = 0.0f; else if (r > 1.0f) r = 1.0f;
     if (g < 0.0f) g = 0.0f; else if (g > 1.0f) g = 1.0f;
     if (b < 0.0f) b = 0.0f; else if (b > 1.0f) b = 1.0f;
