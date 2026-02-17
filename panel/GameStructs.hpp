@@ -3,15 +3,33 @@
 
 #include <cstdint>
 
-// Offsets base (Messiah Engine)
+// Offsets base (Messiah Engine) - Bloodstrike
 #define adrObjects 0x39C8B98
 #define adrD3D11Device 0x39B8DA8
 #define D3D11Device_CameraInfo 0x80
 #define ptrObject1 0x38
 #define ptrObject2 0x470
 
+// Offsets extraídos de offsets2.txt
+#define OFF_CurrentMatch 0x50
+#define OFF_LocalPlayer 0x44
+#define OFF_DictionaryEntities 0x68
+#define OFF_Player_IsDead 0x4c
+#define OFF_Player_Name 0x24c
+#define OFF_AvatarManager 0x420
+#define OFF_Avatar 0x18
+#define OFF_Avatar_Data 0x10
+
+// Silent Aim (AimKill) Offsets
+#define OFF_sAim1 0x4a0 // isShooting (bool)
+#define OFF_sAim2 0x874 // weaponData (uintptr_t)
+#define OFF_sAim3 0x38  // startPos (Vec3)
+#define OFF_sAim4 0x2c  // aimPosition (Vec3 - Destination)
+
 struct Vec3 {
     float x, y, z;
+    Vec3 operator+(const Vec3& v) const { return {x + v.x, y + v.y, z + v.z}; }
+    Vec3 operator-(const Vec3& v) const { return {x - v.x, y - v.y, z - v.z}; }
 };
 
 struct Matrix4x4 {
@@ -34,13 +52,12 @@ struct GameVector {
     uintptr_t End;
 };
 
-// Estructuras de Entidad adaptadas
 class Entity {
 public:
-    // Basado en el dump del motor Messiah
-    char pad_0000[0x50];
-    Vec3 Origin; // 0x0050 (Ajustado según Entity struct)
-    // Otros campos necesarios...
+    char pad_0000[0x4c];
+    bool IsDead; // 0x4c
+    char pad_004d[3];
+    Vec3 Origin; // 0x50
 };
 
-#endif // GAME_STRUCTS_HPP
+#endif

@@ -1,26 +1,44 @@
-TARGET = ModMenu
-ARCHS = arm64
-SYSROOT = $(shell xcrun --sdk iphoneos --show-sdk-path)
-CC = $(shell xcrun --sdk iphoneos --find clang)
-CXX = $(shell xcrun --sdk iphoneos --find clang++)
+# Makefile para Bloodstrike iOS Mod Menu
+# Desarrollado para compatibilidad máxima con GitHub Actions
 
-CFLAGS = -isysroot $(SYSROOT) -arch $(ARCHS) -fobjc-arc -O2 -Wall
-LDFLAGS = -dynamiclib -undefined dynamic_lookup -framework Foundation -framework UIKit
+SYSROOT  = $(shell xcrun --sdk iphoneos --show-sdk-path)
+ARCH     = arm64
 
-SOURCES = ModMenu.mm Math.cpp
-OBJECTS = $(SOURCES:.mm=.o)
-OBJECTS := $(OBJECTS:.cpp=.o)
+# Binarios directos del toolchain (evita el wrapper xcrun que pierde flags en CI)
+CC      = $(shell xcrun --sdk iphoneos --find clang)
+CXX     = $(shell xcrun --sdk iphoneos --find clang++)
 
-all: $(TARGET).dylib
+# Flags comunes de compilación
+COMMON_FLAGS = \
+    -isysroot $(SYSROOT) \
+    -arch $(ARCH) \
+    -fobjc-arc \
+    -O2 \
+    -Wall \
+    -Wno-deprecated-declarations
 
-$(TARGET).dylib: $(OBJECTS)
+# Flags de enlace — TODOS los flags van aquí explícitamente
+# para que el binario directo de clang++ los reciba sin pasar por xcrun
+LDFLAGS = \
+    -isysroot $(SYSROOT) \
+    -arch $(ARCH) \
+    -dynamiclib \
+    -undefined dynamic_lookup \
+    -framework Foundation \
+    -framework UIKit \
+    -stdlib=libc++ \
+    -lc++
+
+all: ModMenu.dylib
+
+ModMenu.dylib: ModMenu.o Math.o
 	$(CXX) $(LDFLAGS) -o $@ $^
 
-%.o: %.mm
-	$(CC) $(CFLAGS) -c $< -o $@
+ModMenu.o: ModMenu.mm
+	$(CC) $(COMMON_FLAGS) -c $< -o $@
 
-%.o: %.cpp
-	$(CXX) $(CFLAGS) -c $< -o $@
+Math.o: Math.cpp
+	$(CXX) $(COMMON_FLAGS) -std=c++17 -c $< -o $@
 
 clean:
-	rm -f $(OBJECTS) $(TARGET).dylib
+	rm -f *.o ModMenu.dylib
